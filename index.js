@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import 'dotenv/config';
 import cors from "cors";
 
@@ -37,6 +37,34 @@ const result = await destinationCollection.insertOne(data)
 console.log(result)
   res.send(result)
 })
+
+app.get('/destination', async(req, res)=>{
+  const result = await destinationCollection.find().toArray()
+  res.send(result)
+})
+
+
+app.get('/destination/:id', async(req, res) =>{
+  const {id} = req.params
+  const result = await destinationCollection.findOne({_id: new ObjectId(id)})
+  console.log(id)
+
+  res.send({result})
+})
+
+
+app.patch('/destination/:id', async(req, res)=>{
+    const {id} = req.params
+    const updateddata = req.body
+
+    const result = await destinationCollection.updateOne({
+      _id: new ObjectId(id)},
+     {$set: updateddata}
+    )
+    res.send(result)
+})
+
+
 
 app.get('/', (req, res) => {
   res.send({ message: 'Server is running fine!' });
