@@ -10,6 +10,17 @@ const PORT = 5000;
 app.use(cors())
 app.use(express.json())
 
+const verifyApi = (req, res, next)=>{
+  const authHeader = req.headers.authorization
+  console.log(authHeader)
+
+  if(authHeader !== "user looged in"){
+    return res.status(401).send({msg:'Unauthorized users!'})
+  }
+  console.log('I am milediar')
+ next()
+}
+
 // MongoDB connection string
 const uri = process.env.MONGODB_URL;
 
@@ -49,7 +60,8 @@ app.get('/destination', async(req, res)=>{
 })
 
 
-app.get('/destination/:id', async(req, res) =>{
+app.get('/destination/:id', verifyApi, async(req, res) =>{
+  
   const {id} = req.params
   const result = await destinationCollection.findOne({_id: new ObjectId(id)})
   console.log(id)
