@@ -30,6 +30,8 @@ const db = mongoClinet.db('wanderlast')
 const destinationCollection = db.collection('destination')
 const bookingCollection = db.collection("bookings")
 
+
+
 app.post("/add-destination", async(req, res)=>{
 const data = req.body
 
@@ -38,6 +40,8 @@ const result = await destinationCollection.insertOne(data)
 console.log(result)
   res.send(result)
 })
+
+
 
 app.get('/destination', async(req, res)=>{
   const result = await destinationCollection.find().toArray()
