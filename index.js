@@ -11,34 +11,71 @@ const PORT = 5000;
 app.use(cors())
 app.use(express.json())
 
-const verifyToken = async (req, res, next)=>{
-  const authHeader = req.headers.authorization
-
-if(!authHeader){
-  return res.status(401).send({msg: "Unauthorized User!"});
-}
-const token = authHeader.split(" ")[1]
-
-if(!token){
-  return res.status(401).send({msg: "Unauthorized User!"})
-}
-
-const JWKS = createRemoteJWKSet(new URL('http://localhost:3000/api/auth/jwks'));
-
-try{
-  const {payload} = await jwtVerify(token, JWKS)
-  next();
-} catch(error){
-  return res.status(500).send({msg: "Internal Server Error!"})
-}
+// const verifyToken = async (req, res, next)=>{
 
 
-console.log(payload)
+//   const authHeader = req.headers.authorization
+
+// if(!authHeader){
+//   return res.status(401).send({msg: "Unauthorized User!"});
+// }
+// const token = authHeader.split(" ")[1]
+
+// if(!token){
+//   return res.status(401).send({msg: "Unauthorized User!"})
+// }
+
+// const JWKS = createRemoteJWKSet(new URL('http://localhost:3000/api/auth/jwks'));
+
+// try{
+//   const {payload} = await jwtVerify(token, JWKS)
+//   next();
+// } catch(error){
+//   return res.status(500).send({msg: "Internal Server Error!"})
+// }
+
+
+// console.log(payload)
 
  
-}
+// }
 
 // MongoDB connection string
+
+const JWKS = createRemoteJWKSet(
+  new URL("http://localhost:3000/api/auth/jwks")
+);
+
+const verifyToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user. Token is missing.",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    const { payload } = await jwtVerify(token, JWKS);
+
+    // পরবর্তী route-এ authenticated user-এর তথ্য পাওয়া যাবে
+    req.user = payload;
+
+    console.log("Authenticated user:", payload.email);
+
+    next();
+  } catch (error) {
+    console.error("JWT verification failed:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired authentication token.",
+    });
+  }
+};
 const uri = process.env.MONGODB_URL;
 
 const client = new MongoClient(process.env.MONGODB_URL);
@@ -60,7 +97,7 @@ const bookingCollection = db.collection("bookings")
 
 
 
-app.post("/add-destination", async(req, res)=>{
+app.post("/add-destination", verifyToken, async(req, res)=>{
 const data = req.body
 
 const result = await destinationCollection.insertOne(data)
@@ -87,7 +124,7 @@ app.get('/destination/:id', verifyToken, async(req, res) =>{
 })
 
 
-app.patch('/destination/:id', async(req, res)=>{
+app.patch('/destination/:id', verifyToken, async(req, res)=>{
     const {id} = req.params
     const updateddata = req.body
 
@@ -98,7 +135,7 @@ app.patch('/destination/:id', async(req, res)=>{
     res.send(result)
 })
 
-app.delete('/destination/:id', async(req, res) =>{
+app.delete('/destination/:id',verifyToken, async(req, res) =>{
   const {id} = req.params
   const result = await destinationCollection.deleteOne({id: new ObjectId(id)})
 
@@ -107,13 +144,13 @@ app.delete('/destination/:id', async(req, res) =>{
 
 
 
-app.post('/bookings', async (req, res)=>{
+app.post('/bookings', verifyToken, async (req, res)=>{
   const data = req.body
   const result = await bookingCollection.insertOne(data)
   res.send(result)
 })
 
-app.delete('/bookings/:id', async (req, res)=>{
+app.delete('/bookings/:id', verifyToken, async (req, res)=>{
   const {id} = req.params
   const {email} = req.query
 
