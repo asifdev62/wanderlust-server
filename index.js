@@ -43,7 +43,7 @@ app.use(express.json())
 // MongoDB connection string
 
 const JWKS = createRemoteJWKSet(
-  new URL("http://localhost:3000/api/auth/jwks")
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
 );
 
 const verifyToken = async (req, res, next) => {
@@ -201,7 +201,7 @@ async function startServer() {
     process.exit(1);
   }
 }
-
+export default app
 startServer();
 
 
